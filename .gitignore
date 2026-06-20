@@ -1,0 +1,33 @@
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+# storage.rules.debug removed — storage.rules is no longer used
+
+# Functions
+functions/lib/
+functions/node_modules/
+functions/.env
+
+# Frontend
+node_modules/
+dist/
+.env.local
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Deleted — no longer in project
+# storage.rules
+
+node_modules
+backend/node_modules
+.env
+.env.example
