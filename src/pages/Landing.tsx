@@ -100,7 +100,7 @@ export default function Landing() {
           <div className="lg:col-span-6 relative flex justify-center lg:justify-end">
             <div className="relative w-full max-w-[440px] aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-lg border border-[#E8E3DC]">
               <img 
-                src="https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?auto=format&fit=crop&q=80&w=800" 
+                src="https://plus.unsplash.com/premium_photo-1664048713117-bf8a405e4933?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
                 alt="Wavy golden hair back view" 
                 className="w-full h-full object-cover"
               />
@@ -116,7 +116,9 @@ export default function Landing() {
               </div>
 
               {/* Status Metric Card (Bottom Left Overlay) */}
-              <div className="absolute bottom-[-20] left-2 bg-white/95 backdrop-blur p-4 rounded-2xl shadow-xl border border-[#E8E3DC] w-[240px] animate-scale-in">
+             
+            </div>
+             <div className="absolute bottom-[-10px] left-5 bg-white/95 backdrop-blur p-4 rounded-2xl shadow-xl border border-[#E8E3DC] w-[240px] animate-scale-in">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="w-2 h-2 rounded-full bg-[#4A9B7F]" />
                   <span className="text-[9px] font-bold tracking-widest text-[#6B6560] uppercase">Analysis Complete</span>
@@ -141,7 +143,6 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
-            </div>
           </div>
         </div>
       </section>
@@ -168,7 +169,7 @@ export default function Landing() {
       <section className="w-full bg-[#FAF8F5] py-20 px-6 md:px-16 lg:px-24" id="features">
         <div className="max-w-[1200px] mx-auto text-center">
           <span className="text-[10px] uppercase font-bold tracking-widest text-[#C4956A] block mb-4" style={{ letterSpacing: '0.15em' }}>THE PROBLEM</span>
-          <h2 className="text-3xl lg:text-5xl font-extrabold text-[#1A1714] mb-6 max-w-[700px] mx-auto leading-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+          <h2 className="text-4xl lg:text-5xl font-extrabold text-[#1A1714] mb-6 max-w-[700px] mx-auto leading-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
             You save the photo. <br />But will it actually work?
           </h2>
           <p className="text-sm lg:text-base text-[#6B6560] leading-relaxed max-w-[650px] mx-auto mb-16">
@@ -213,10 +214,10 @@ export default function Landing() {
                 <div className="w-10 h-10 rounded-full bg-[#FAF3EE] flex items-center justify-center mb-5">
                   {card.icon}
                 </div>
-                <h3 className="text-sm font-bold text-[#1A1714] mb-2.5">
+                <h3 className="text-md font-bold text-[#1A1714] mb-2.5">
                   {card.title}
                 </h3>
-                <p className="text-xs text-[#6B6560] leading-relaxed">
+                <p className="text-sm text-[#6B6560] leading-relaxed">
                   {card.desc}
                 </p>
               </div>
@@ -264,10 +265,10 @@ export default function Landing() {
                     <span className="text-sm">{step.icon}</span>
                   </div>
                 </div>
-                <h3 className="text-base font-bold text-[#1A1714] mb-2.5">
+                <h3 className="text-md font-bold text-[#1A1714] mb-2">
                   {step.step}
                 </h3>
-                <p className="text-xs text-[#6B6560] leading-relaxed max-w-[260px]">
+                <p className="text-sm text-[#6B6560] leading-relaxed max-w-[260px]">
                   {step.desc}
                 </p>
               </div>
@@ -320,14 +321,14 @@ export default function Landing() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-sm font-bold text-[#1A1714] leading-none">
+                    <h3 className="text-md font-bold text-[#1A1714] leading-none">
                       {item.title}
                     </h3>
                     <span className="text-[10px] text-[#6B6560] bg-[#F3F0EC] px-2.5 py-0.5 rounded-md font-medium capitalize tracking-normal leading-none">
                       {item.badge}
                     </span>
                   </div>
-                  <p className="text-xs text-[#6B6560] leading-relaxed">
+                  <p className="text-sm text-[#6B6560] leading-relaxed">
                     {item.desc}
                   </p>
                 </div>
@@ -472,7 +473,7 @@ export default function Landing() {
       </section>
 
       {/* 10. FOOTER BAR */}
-      <footer className="w-full bg-white border-t border-[#E8E3DC] py-8 px-6 md:px-16 lg:px-24">
+      <footer className="w-full bg-white border-t border-[#E8E3DC] py-6 px-6 md:px-16 lg:px-24">
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Left */}
           <div className="flex items-center gap-2">
