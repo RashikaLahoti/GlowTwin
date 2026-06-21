@@ -82,18 +82,26 @@ export const analyze = async (req, res, next) => {
         result,
       });
     } catch (geminiErr) {
-      const errMsg = geminiErr instanceof Error ? geminiErr.message : 'Gemini analysis failed';
-      
-      // Update DB to error
+      console.error("========== FULL AI ERROR ==========");
+      console.error(geminiErr);
+
+      if (geminiErr?.response?.data) {
+        console.error(
+          JSON.stringify(geminiErr.response.data, null, 2)
+        );
+      }
+
+      const errMsg =
+        geminiErr instanceof Error
+          ? geminiErr.message
+          : String(geminiErr);
+
       analysis.status = 'error';
       analysis.errorMessage = errMsg;
-      analysis.completedAt = new Date();
       await analysis.save();
 
-      console.error(`[Analysis Controller] Analysis ${analysis._id} failed: ${errMsg}`);
-      
-      res.status(500).json({
-        error: 'AI analysis failed. Please try again.',
+      return res.status(500).json({
+        error: errMsg,
         code: 'GEMINI_ERROR',
         analysisId: analysis._id,
       });

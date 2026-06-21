@@ -22,7 +22,7 @@ const AlternativeSchema = z.object({
   name: z.string().min(1),
   why: z.string().min(1),
   match: z.string().min(1),
-  emoji: z.string().regex(/^\p{Emoji}$/u, 'Must be a single emoji'),
+emoji: z.string().min(1).max(10),
 });
 
 export const GeminiAnalysisSchema = z.object({
