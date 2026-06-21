@@ -6,7 +6,7 @@ import { Screen, Nav, StepProgress, Content, StickyBottom, Btn, AICard } from '.
 import { useAnalysis } from '../hooks/useAnalysis'
 import { uploadToCloudinary, CloudinaryUploadError } from '../services/cloudinary'
 
-const CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad']
+const CITIES = ['Bhopal', 'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad']
 const BUDGETS = [
   { value: '2k-5k', label: '₹2,000 – ₹5,000' },
   { value: '5k-10k', label: '₹5,000 – ₹10,000' },

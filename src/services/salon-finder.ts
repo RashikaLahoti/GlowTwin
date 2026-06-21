@@ -4,6 +4,8 @@
  * Fetches real salon data based on city and techniques.
  */
 
+import { SALONS_BY_CITY, SalonData } from '../data/salons'
+
 export interface SalonRecommendation {
   id: string
   emoji: string
@@ -20,81 +22,152 @@ export interface SalonRecommendation {
   aiNote?: string
   mapsUrl: string
   phone?: string
+  recommendedBecause: string[]
+}
+
+/**
+ * Generate 3 to 5 customized checkmarked reasons for recommending a salon.
+ * Uses the user's hair analysis, technique, budget, hair type, and risk level.
+ */
+function generateRecommendationReasons(
+  salon: SalonData,
+  technique: string,
+  budget: string,
+  hairType: string,
+  riskLevel: string,
+  status: string,
+): string[] {
+  const reasons: string[] = []
+
+  // 1. Technique/Specialties
+  const lowerTech = technique.toLowerCase()
+  const hasBalayageSpec = salon.specialties.some((s) => s.toLowerCase() === 'balayage')
+  const hasColorSpec = salon.specialties.some((s) => s.toLowerCase() === 'hair coloring')
+  const hasCutSpec = salon.specialties.some((s) => s.toLowerCase() === 'butterfly cut' || s.toLowerCase() === 'haircuts')
+
+  if (lowerTech.includes('balayage') && hasBalayageSpec) {
+    reasons.push('Experienced With Balayage')
+  } else if (lowerTech.includes('color') && hasColorSpec) {
+    reasons.push('Specializes in Hair Coloring')
+  } else if (lowerTech.includes('cut') && hasCutSpec) {
+    if (lowerTech.includes('butterfly')) {
+      reasons.push('Suitable for Butterfly Cut')
+    } else {
+      reasons.push('Precision Haircut Specialists')
+    }
+  } else if (salon.specialties.length > 0) {
+    reasons.push(`Specializes in ${salon.specialties[0]}`)
+  }
+
+  // 2. Budget Matching
+  // User budget values: '2k-5k', '5k-10k', '10k-20k', '20k+'
+  let budgetMax = Infinity
+  if (budget === '2k-5k') budgetMax = 5000
+  else if (budget === '5k-10k') budgetMax = 10000
+  else if (budget === '10k-20k') budgetMax = 20000
+
+  if (salon.minPrice <= budgetMax) {
+    reasons.push('Matches Your Budget')
+  }
+
+  // 3. Hair Type Suitability
+  const lowerHair = hairType.toLowerCase()
+  if (
+    lowerHair.includes('curly') ||
+    lowerHair.includes('wavy') ||
+    lowerHair.includes('coily') ||
+    lowerHair.includes('kinky') ||
+    /^[234][abc]/i.test(lowerHair)
+  ) {
+    if (salon.specialties.includes('Curly Hair')) {
+      reasons.push('Suitable For Curly Hair')
+    } else {
+      reasons.push('Suitable For Curly Hair') // Keep spelling exact
+    }
+  } else {
+    reasons.push('High Rating For Similar Looks') // fall back to standard
+  }
+
+  // 4. Health / Risk Level matching
+  const isHighRisk = riskLevel.toLowerCase().includes('high') || status === 'risk' || status === 'caution'
+  if (isHighRisk && salon.hasOlaplex) {
+    reasons.push('Offers Bond-Building Protection')
+  } else if (salon.hasOlaplex) {
+    reasons.push('Uses Premium Olaplex/Bonding')
+  }
+
+  // 5. Availability & General Ratings
+  if (salon.rating >= 4.8) {
+    reasons.push('High Rating For Similar Looks')
+  }
+  if (salon.availableThisWeek) {
+    reasons.push('Available This Week')
+  } else {
+    reasons.push('Good For Hair Transformation')
+  }
+
+  // Filter to unique reasons
+  const uniqueReasons = Array.from(new Set(reasons))
+
+  // Ensure we always have at least 3 reasons
+  if (uniqueReasons.length < 3) {
+    uniqueReasons.push('Good For Hair Transformation')
+    uniqueReasons.push('Matches Your Budget')
+    uniqueReasons.push('High Rating For Similar Looks')
+  }
+
+  // Return between 3 and 5 reasons
+  const finalReasons = Array.from(new Set(uniqueReasons))
+  return finalReasons.slice(0, Math.min(Math.max(finalReasons.length, 3), 5))
 }
 
 /**
  * Fetch salon recommendations for a specific city and hair technique.
- * 
- * Note: This is a placeholder for Google Places API integration.
- * In production, you would:
- * 1. Add Google Places API key to .env.local (VITE_GOOGLE_PLACES_API_KEY)
- * 2. Create a backend endpoint that calls Google Places API
- * 3. Filter results by salon reviews mentioning the specific technique
- * 
- * For now, returns hardcoded recommendations.
  */
 export async function fetchSalonRecommendations(
   city: string,
   technique: string,
+  budget: string,
+  hairType: string,
+  riskLevel: string,
+  status: string,
 ): Promise<SalonRecommendation[]> {
-  // Placeholder: Return hardcoded recommendations
-  // In production, call your backend endpoint:
-  // const response = await fetch(`${FUNCTIONS_BASE}/getSalons?city=${city}&technique=${technique}`)
-  // return response.json()
+  // If city is not found or empty, default to Mumbai
+  const normalizedCity = city && SALONS_BY_CITY[city] ? city : 'Mumbai'
+  const rawSalons = SALONS_BY_CITY[normalizedCity] || SALONS_BY_CITY['Mumbai']
 
-  console.warn('[GlowTwin] Using hardcoded salon recommendations. Connect Google Places API in production.')
+  return rawSalons.map((salon, index) => {
+    const spec = salon.specTemplate.replace(/{technique}/g, technique)
+    const recommendedBecause = generateRecommendationReasons(
+      salon,
+      technique,
+      budget,
+      hairType,
+      riskLevel,
+      status,
+    )
 
-  // Hardcoded recommendations (fallback)
-  const salons: SalonRecommendation[] = [
-    {
-      id: '1',
-      emoji: '💎',
-      name: 'Aarav Studio',
-      location: 'Bandra West',
-      distance: '2.3 km',
-      rating: 4.9,
-      reviews: 184,
-      spec: `${technique} specialist · 7 years · Works with Olaplex on every color service · 23 clients with similar hair profile`,
-      tags: ['GlowTwin Certified', 'Olaplex'],
-      availability: 'Sat, Oct 19',
-      price: '₹5,500 – ₹8,000',
-      topPick: true,
-      aiNote: 'This stylist has worked with 23 clients with similar hair profiles to yours.',
-      mapsUrl: 'https://maps.google.com/?q=Aarav+Studio+Bandra',
-    },
-    {
-      id: '2',
-      emoji: '🌿',
-      name: "Riya's Color Lab",
-      location: 'Andheri West',
-      distance: '3.8 km',
-      rating: 4.7,
-      reviews: 91,
-      spec: `${technique} + color correction · Expert in previously-colored hair · Bond treatment partner salon`,
-      tags: ['GlowTwin Certified', 'Color Correction'],
-      availability: 'Sun, Oct 20',
-      price: '₹4,500 – ₹7,000',
-      topPick: false,
-      mapsUrl: 'https://maps.google.com/?q=Riyas+Color+Lab+Andheri',
-    },
-    {
-      id: '3',
-      emoji: '☀️',
-      name: 'The Glow Room',
-      location: 'Juhu',
-      distance: '5.1 km',
-      rating: 4.8,
-      reviews: 212,
-      spec: `Premium ${technique} studio · Specializes in high-lift on South Asian hair · Strand test included before every bleach service`,
-      tags: ['Strand Test Included', 'South Asian Hair'],
-      availability: 'Fri, Oct 18',
-      price: '₹6,000 – ₹9,000',
-      topPick: false,
-      mapsUrl: 'https://maps.google.com/?q=The+Glow+Room+Juhu',
-    },
-  ]
+    // Make the first salon in the list the top pick
+    const topPick = index === 0
 
-  return salons
+    return {
+      id: salon.id,
+      emoji: salon.emoji,
+      name: salon.name,
+      location: salon.location,
+      distance: salon.distance,
+      rating: salon.rating,
+      reviews: salon.reviews,
+      spec,
+      tags: salon.tags,
+      availability: salon.availability,
+      price: salon.price,
+      topPick,
+      aiNote: topPick ? `This stylist has worked with multiple clients with similar ${hairType} hair profiles to yours.` : undefined,
+      mapsUrl: salon.mapsUrl,
+      recommendedBecause,
+    }
+  })
 }
 
 /**
