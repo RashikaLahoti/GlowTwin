@@ -136,23 +136,23 @@ Users can:
 
 ### Landing Page
 
-*Add screenshot here*
+![alt text](/assets/landing%20page.png)
 
 ### Upload Flow
 
-*Add screenshot here*
+![alt text](/assets/upload%20flow.gif)
 
-### Reality Report
+### Anaysis 
 
-*Add screenshot here*
+![alt text](/assets/analysis%20flow.gif)
 
 ### Glow Roadmap
 
-*Add screenshot here*
+![alt text](/assets/roadmap.png)
 
 ### Salon Recommendations
 
-*Add screenshot here*
+![alt text](/assets/salon%20recommendation.png)
 
 ---
 
