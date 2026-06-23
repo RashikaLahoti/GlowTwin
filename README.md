@@ -1,263 +1,271 @@
-# GlowTwin AI — Know Before You Glow
+# 🌟 GlowTwin AI — Know Before You Glow
 
-AI-powered beauty decision platform. Upload your selfie + inspiration look → get an honest hair analysis, full 12-month cost breakdown, and a matched salon specialist.
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black&style=flat-square)](#)
+[![Vite](https://img.shields.io/badge/Vite-6.3-646CFF?logo=vite&style=flat-square)](#)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?logo=tailwindcss&style=flat-square)](#)
+[![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=flat-square)](#)
+[![Express](https://img.shields.io/badge/Express-4.19-000000?logo=express&logoColor=white&style=flat-square)](#)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white&style=flat-square)](#)
+[![Gemini](https://img.shields.io/badge/Google_Gemini-2.5_Flash-4285F4?logo=google-gemini&logoColor=white&style=flat-square)](#)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter-API-7E56C2?style=flat-square)](#)
 
----
-
-## Architecture
-
-```
-Frontend (React + Vite + Tailwind)
-  │
-  ├─ Cloudinary       → image upload (unsigned preset, auto-delete 24h)
-  ├─ Firebase Auth    → optional Google sign-in
-  └─ Cloud Functions  → analyzeImages / saveBooking
-
-Cloud Functions (Node 20 + TypeScript)
-  │
-  ├─ Receives Cloudinary secure_urls
-  ├─ Fetches images via axios → base64
-  ├─ Sends to Gemini Vision API → structured JSON
-  └─ Writes result to Firestore (Admin SDK)
-
-Firestore
-  ├─ /users/{userId}
-  ├─ /analyses/{analysisId}
-  └─ /bookings/{bookingId}
-
-NO Firebase Storage — Cloudinary handles all images.
-```
+GlowTwin AI is a security-hardened, visual beauty-decision platform that takes the guessing out of high-stakes hair and beauty transformations. By analyzing a client's selfie alongside their inspiration look, GlowTwin predicts chemical feasibility, outlines a comprehensive 12-month Cost of Ownership (TCO), creates a tailored hair prep roadmap, generates a shareable Stylist Brief, and matches them with certified local specialists.
 
 ---
 
-## What was removed vs what's used
+## ⚠️ The Problem
 
-| Service | Status | Reason |
+1. **High-Stakes Feasibility Blunders:** Chemical hair processing (e.g., bleaching dark South Asian hair to platinum blonde) carries severe risks of irreversible chemical burns, hair breakage, and patchy color distribution.
+2. **Hidden 12-Month Maintenance Costs:** Salon clients are often blindsided by the "Total Cost of Ownership" (TCO). A ₹5,500 initial balayage session actually costs ₹35,000+ annually when factoring in toning, bond builders, and specialized home products.
+3. **Mismatched Stylists:** Clients select salons based on proximity or generic reviews rather than verifying if the stylist is certified in their specific target technique (e.g., free-hand balayage).
+4. **Lost in Translation:** Clients struggle to communicate technical specifications (undertones, current hair history, developer strength limits) to their stylists, leading to mismatched results.
+
+---
+
+## ✨ The GlowTwin Solution
+
+GlowTwin bridges the gap between client aspirations, financial reality, hair health, and professional salon implementation:
+
+*   **AI Visual Analysis (Reality Report):** Evaluates hair type, natural undertones, face shape, and current hair health (1–10 score) by comparing the user's selfie and inspiration image.
+*   **Total Cost of Ownership (TCO) Calculator:** Predicts costs over a 12-month horizon (initial session, regular toning, bond treatments, home care products) with an honest "AI Cost Note".
+*   **Glow Roadmap:** Delivers a 3-to-5 phase step-by-step prep and maintenance roadmap (e.g., at-home moisture/protein protocols to raise hair health score before bleaching).
+*   **Stylist Brief:** Generates a downloadable, technical brief card specifying hair properties, target technique, and developer limits for the client to share with their stylist.
+*   **Salon Specialist Matcher:** Recommends verified local salons in **Mumbai**, **Bangalore**, and **Bhopal** filtered by certified specialties, budget thresholds, availability, and bond-building capability (e.g., Olaplex).
+*   **JWT-Authenticated Bookings:** Allows users to schedule appointments and saves booking briefs securely in MongoDB.
+
+---
+
+## 🏗️ Architecture Overview
+
+GlowTwin AI is built on a decoupled, secure client-server architecture:
+
+```
+                      ┌────────────────────────┐
+                      │    Client Browser      │
+                      │  (React + Tailwind v4) │
+                      └───────────┬────────────┘
+                                  │
+          1. Direct Upload        │ 2. POST /analyze
+          (Unsigned Preset)       │    with image URLs
+                                  ▼
+ ┌───────────────┐      ┌──────────────────┐      ┌───────────────┐
+ │  Cloudinary   │      │ Express Backend  │      │    MongoDB    │
+ │ Image Hosting │      │     (Node.js)    │      │   Database    │
+ └──────┬────────┘      └─────────┬────────┘      └───────┬───────┘
+        ▲                         │                       ▲
+        │ 4. Downloads Base64     │ 3. Create Pending Doc │ 7. Updates Doc
+        │    & sends to Gemini    │ 6. Zod Validate & Save│    to Complete
+        │                         ▼                       │
+        │             ┌──────────────────────┐            │
+        └─────────────┤    OpenRouter API    ├────────────┘
+                      │ (Gemini 2.5 Flash)   │
+                      └──────────────────────┘
+```
+
+### Decoupled Media Handling
+To bypass database payload bottlenecks and optimize transfer speeds, the frontend uploads images directly to Cloudinary using an unsigned upload preset (configured with a 10MB limit and a 24-hour auto-delete lifecycle). Only the secure HTTPS URLs and public IDs are transmitted to the backend.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies | Key Features |
 |---|---|---|
-| Firebase Storage | ❌ Removed | Requires Blaze billing |
-| `storage.rules` | ❌ Deleted | Not deployed |
-| `storageService.ts` | ❌ Never created | |
-| Cloudinary | ✅ Added | Free tier, direct upload |
-| Firebase Auth | ✅ Kept | Google sign-in |
-| Firestore | ✅ Kept | Analysis + booking storage |
-| Cloud Functions | ✅ Kept | Gemini integration |
-| Gemini Vision | ✅ Kept | Core AI analysis |
+| **Frontend Framework** | React 18 · Vite 6 · TypeScript 5.4 | Single Page App, lightning-fast rendering, route lazy loading. |
+| **Styling & Icons** | Tailwind CSS v4 · Lucide React | Curated, dark-mode/glassmorphism aesthetics, responsive layouts. |
+| **Routing & Toasts** | React Router v7 · Sonner | Smooth, client-side page transitions and feedback. |
+| **Database** | MongoDB · Mongoose | Flexible document modeling for users, analyses, and bookings. |
+| **Backend API** | Node.js (v20+) · Express | Structured MVC pattern, security middleware, JWT authentication. |
+| **AI Vision Processor** | OpenRouter API · Gemini 2.5 Flash | Multimodal visual processing, schema-enforced analysis. |
+| **Media Pipeline** | Cloudinary Unsigned Upload API | Fast image uploads, automatic thumbnail transformations, auto-cleanup. |
+| **Validation & Safety** | Zod · Rate Limit Middleware · BCryptJS | strict schema enforcement, endpoint rate limits, password hashing. |
 
 ---
 
-## Files changed in storage refactor
+## 🧠 AI Analysis Pipeline
 
-### Deleted / never created
-- `storage.rules` — removed from `firebase.json`, not deployed
-- `src/services/storage.ts` — never created
-- `src/services/storageService.ts` — never created
+The visual analysis pipeline is engineered for high reliability:
 
-### New files created
-```
-src/services/cloudinary.ts     ← direct Cloudinary upload
-src/services/firebase.ts       ← Firebase Auth + Firestore init (no Storage)
-src/services/analysis.ts       ← calls analyzeImages Cloud Function
-functions/src/index.ts         ← analyzeImages + saveBooking Cloud Functions
-functions/src/gemini.ts        ← Gemini Vision integration
-functions/src/firestore.ts     ← Firestore Admin SDK helpers
-```
-
-### Modified files
-```
-firebase.json          ← storage block removed, storage emulator removed
-.env.example           ← VITE_FIREBASE_STORAGE_BUCKET removed, Cloudinary added
-.gitignore             ← storage.rules.debug removed
-src/hooks/useAnalysis.tsx ← selfiePublicId + inspoPublicId added to context
-src/pages/UploadSelfie.tsx ← uploads to Cloudinary, shows progress
-src/pages/UploadInspo.tsx  ← uploads to Cloudinary, shows progress
-src/pages/Analyzing.tsx    ← calls analyzeImages Cloud Function
-```
+1. **Structured Multimodal Prompting:** The backend queries `google/gemini-2.5-flash` via OpenRouter. The prompt forces Gemini to act as a seasoned South Asian trichologist and colorist.
+2. **Strict JSON Constraints:** Gemini is instructed to respond *only* with a clean JSON object conforming to an exact structural schema.
+3. **Resiliency & JSON Repair:** The backend includes a repair helper that automatically strips markdown code fences, trailing commas, and formatting bugs before parsing.
+4. **Zod Validation:** The backend validates the parsed response using a strict Zod schema (`GeminiAnalysisSchema`). If the array limits (exactly 3 reality points, 3 alternatives, 3-5 milestones) or ranges (hair health 1-10) are violated, the pipeline retries.
+5. **Exponential Backoff:** If the analysis fails, the backend triggers up to **2 retries** with exponential backoff (2s → 4s delays) before returning an error.
 
 ---
 
-## Setup
+## 💅 Salon Recommendation System
 
-### 1. Clone and install
+Matches are generated dynamically using `src/services/salon-finder.ts` matching client specifications with salon criteria:
+
+*   **Technique Matching:** Recommends salons specializing in the exact technique detected by Gemini (e.g., Balayage, Precision Cuts).
+*   **Budget Alignment:** Compares the salon's minimum pricing thresholds against the user's selected budget range.
+*   **Curly Hair Filters:** Flags salons with verified specialties in curly/wavy hair types (Types 2A–4C).
+*   **Damage/Risk Mitigation:** Matches high-risk analyses with salons offering premium bond-building protection (Olaplex).
+*   **Availability:** Highlights salons with immediate openings ("Available This Week").
+
+---
+
+## 📡 API Overview
+
+The Express backend exposes the following routes under `/api`:
+
+### 🔐 Authentication (`/api/auth`)
+*   `POST /register` - Registers a new user. Hashes password using BCryptJS and sets a secure HttpOnly refresh token cookie.
+*   `POST /login` - Authenticates user credentials. Returns a short-lived access JWT (15-minute expiry) and sets a refresh cookie.
+*   `POST /google-mock` - Hackathon bypass endpoint. Authenticates or registers a demo Google user, returning access tokens without requiring external OAuth setups.
+*   `POST /refresh` - Reads the refresh token from cookie or request body, validating it to issue a new access token.
+*   `POST /logout` - Clears the HttpOnly refresh token cookie.
+
+### 🧠 AI Analyses (`/api/analyses`)
+*   `POST /analyze` - *(Rate Limited: 5 req/min)* Accepts `selfieUrl`, `selfiePublicId`, `inspirationUrl`, `inspoPublicId`, `city`, `budget`. Runs Gemini Vision analysis and logs a pending document in MongoDB, which updates to complete upon success. (Supports optional authentication to tie analyses to users).
+*   `GET /` - *(Requires Authentication)* Returns the logged-in user's analysis history, ordered newest first.
+*   `GET /:id` - *(Optional Authentication)* Fetches a specific analysis. Enforces ownership security checks if a user is associated with the analysis.
+
+### 📅 Bookings (`/api/bookings`)
+*   `POST /` - Saves a salon booking (`analysisId`, `salon`, `date`, `time`). Verifies the analysis ID exists.
+*   `GET /` - *(Requires Authentication)* Fetches the logged-in user's booking records, populating full analysis details.
+
+---
+
+## ⚙️ Local Development Setup
+
+### Prerequisites
+*   Node.js 20+ installed
+*   MongoDB installed locally (running on `mongodb://127.0.0.1:27017`) or a MongoDB Atlas URI
+*   Cloudinary Account (Free Tier)
+*   OpenRouter API Key (to query Gemini 2.5 Flash)
+
+---
+
+### Step 1: Clone and Install
 
 ```bash
-git clone <your-repo>
+# Clone the repository
+git clone <repository-url>
 cd glowtwin
 
-# Frontend
+# Install frontend dependencies
 npm install
 
-# Cloud Functions
-cd functions && npm install && cd ..
+# Install backend dependencies
+cd backend
+npm install
+cd ..
 ```
 
-### 2. Firebase project
+---
 
-```bash
-npm install -g firebase-tools
-firebase login
-firebase projects:create glowtwin-ai   # or use existing
-firebase use glowtwin-ai
-```
+### Step 2: Configure Environment Variables
 
-Enable these in Firebase Console:
-- Authentication → Google provider
-- Firestore Database → create in production mode
-- Cloud Functions → requires Blaze plan (pay-as-you-go, free tier generous)
+#### Frontend Configuration
+Create a `.env` file in the **root directory**:
 
-### 3. Cloudinary setup
-
-1. Sign up at cloudinary.com (free tier: 25GB storage, 25GB bandwidth/month)
-2. Settings → Upload → Upload Presets → **Add upload preset**
-   - Preset name: `glowtwin_uploads`
-   - Signing Mode: **Unsigned**
-   - Folder: `glowtwin/uploads`
-   - Allowed formats: `jpg,jpeg,png,webp,heic`
-   - Max file size: 10 MB
-3. Note your **Cloud name** from the dashboard
-
-### 4. Gemini API key
-
-1. Go to [aistudio.google.com](https://aistudio.google.com) → Get API key
-2. Or: Google Cloud Console → APIs → Generative Language API → Credentials
-
-### 5. Environment variables
-
-**Frontend** — copy `.env.example` to `.env.local`:
-
-```bash
-cp .env.example .env.local
-```
-
-Fill in:
-```
-VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=...
-VITE_FIREBASE_PROJECT_ID=...
-VITE_FIREBASE_MESSAGING_SENDER_ID=...
-VITE_FIREBASE_APP_ID=...
-
-VITE_CLOUDINARY_CLOUD_NAME=your-cloud-name
+```env
+# Cloudinary Configuration
+VITE_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 VITE_CLOUDINARY_UPLOAD_PRESET=glowtwin_uploads
 
-VITE_FUNCTIONS_BASE_URL=http://127.0.0.1:5001/your-project-id/us-central1
+# Backend API Endpoint
+VITE_FUNCTIONS_BASE_URL=http://localhost:5000/api
 ```
 
-**Cloud Functions** — copy `functions/.env.example` to `functions/.env`:
+#### Backend Configuration
+Create a `.env` file inside the `backend` directory:
 
+```env
+# Server Port & Mode
+PORT=5000
+NODE_ENV=development
+
+# Database Connection (Local fallback is used if empty)
+MONGODB_URI=mongodb://127.0.0.1:27017/glowtwin
+
+# JWT Encryption Keys (Generate strong keys for production)
+JWT_ACCESS_SECRET=your_jwt_access_secret_key_here
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_key_here
+
+# OpenRouter API Key
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+
+# CORS Configuration (Origins permitted to make API requests)
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
+```
+
+---
+
+### Step 3: Configure Cloudinary Presets
+
+To enable unsigned uploads directly from the frontend:
+1. Log in to [Cloudinary](https://cloudinary.com).
+2. Go to **Settings** (gear icon) → **Upload** → **Upload presets**.
+3. Click **Add upload preset**.
+4. Configure as follows:
+   *   **Preset name:** `glowtwin_uploads` (must match `VITE_CLOUDINARY_UPLOAD_PRESET`).
+   *   **Signing mode:** `Unsigned` (critical for client-side uploads).
+   *   **Folder:** `glowtwin/uploads`.
+   *   **Allowed formats:** `jpg, jpeg, png, webp, heic`.
+   *   **Max file size:** `10` MB.
+5. Click **Save**.
+
+---
+
+### Step 4: Run Locally
+
+Start the servers in separate terminal sessions:
+
+**Terminal 1 (Backend API):**
 ```bash
-cp functions/.env.example functions/.env
+cd backend
+npm run dev
 ```
+*App will connect to MongoDB and start nodemon at [http://localhost:5000](http://localhost:5000).*
 
-Fill in:
-```
-GEMINI_API_KEY=your-gemini-api-key
-```
-
-### 6. Deploy Firestore rules
-
-```bash
-firebase deploy --only firestore:rules,firestore:indexes
-```
-
-### 7. Run locally
-
-**Terminal 1 — Firebase emulators:**
-```bash
-firebase emulators:start --only auth,firestore,functions
-```
-
-**Terminal 2 — Frontend dev server:**
+**Terminal 2 (Frontend Client):**
 ```bash
 npm run dev
 ```
+*Launches the Vite development server at [http://localhost:5173](http://localhost:5173).*
 
-Open [http://localhost:5173](http://localhost:5173)
+---
 
-> **Demo mode:** If `VITE_FUNCTIONS_BASE_URL` is not set or contains `YOUR_PROJECT_ID`,
-> the Analyzing screen uses mock data — no Cloud Function call is made.
-> You'll see "DEMO MODE" label on the analysis screen.
+### 💡 Hackathon Demo Mode (Offline / No Keys Setup)
 
-### 8. Deploy to production
+To test the application instantly without setting up API keys, simply **leave the backend server offline**. 
 
+When the frontend fails to reach the backend, it detects the connection failure and automatically falls back to **Demo Mode** using a high-fidelity mock dataset (`MOCK_RESULT` inside [useAnalysis.tsx](file:///c:/dev/Clonned%20GlowTwin/Clonned%20GlowTwin/src/hooks/useAnalysis.tsx)). A clear "DEMO MODE" badge will appear in the UI, enabling a zero-configuration walkthrough of the entire user path.
+
+---
+
+## 🌍 Deployment Details
+
+### Backend Deployment (Render / Heroku)
+The Express backend is production-ready for deployment on platform services (e.g., Render, Heroku):
+1. Connect your repository to Render.
+2. Create a Web Service pointing to the root directory, with build command `cd backend && npm install` and start command `cd backend && npm start`.
+3. Add the production environment variables (e.g., `MONGODB_URI` using Atlas, `OPENROUTER_API_KEY`, etc.).
+4. Set `ALLOWED_ORIGINS` to your production frontend URL.
+
+### Frontend Deployment (Vercel / Netlify / Firebase Hosting)
+Build the frontend asset bundle:
 ```bash
-# Build frontend
 npm run build
-
-# Deploy functions + Firestore rules
-firebase deploy --only functions,firestore
-
-# Deploy frontend to Firebase Hosting (optional)
-firebase deploy --only hosting
 ```
+This generates optimized HTML, CSS, and JS assets in the `dist` directory (~250KB gzipped). Upload this folder to Vercel, Netlify, or Firebase Hosting. Ensure `VITE_FUNCTIONS_BASE_URL` in the frontend production configuration points to the live backend URL.
 
 ---
 
-## Firestore data model
+## 💼 Business Model & Scalability
 
-```
-/analyses/{analysisId}
-  userId: string | undefined
-  selfieUrl: string              ← Cloudinary secure_url
-  inspirationUrl: string         ← Cloudinary secure_url
-  selfiePublicId: string         ← Cloudinary public_id
-  inspoPublicId: string          ← Cloudinary public_id
-  city: string
-  budget: string
-  status: 'pending' | 'processing' | 'complete' | 'error'
-  result: GlowTwinAnalysis       ← written by Cloud Function
-  createdAt: Timestamp
-  completedAt: Timestamp
+GlowTwin AI is designed to scale with a clear, value-first monetization path:
 
-  /bookings/{bookingId}
-    salon: string
-    date: string
-    time: string
-    stylistBriefSent: true
-    createdAt: Timestamp
-
-/users/{userId}
-  email: string
-  displayName: string
-  createdAt: Timestamp
-
-/bookings/{bookingId}            ← top-level mirror for easy querying
-  (same as sub-collection above)
-```
+1. **Lead Generation Model:** Instead of charging booking commissions that alienate salons, GlowTwin matches users based on technique fit and charges a flat lead fee or listing fee to partner salons.
+2. **Product Affiliation:** The 12-month Cost Breakdown recommends specialized care products (sulfate-free shampoo, bond repair creams). GlowTwin can integrate affiliate shopping links directly into the report.
+3. **B2B Certification:** Salons can pay to list their certified stylists as "GlowTwin Verified," boosting their rank in search queries.
+4. **Scalability:** By shifting compute workloads (Gemini API vision processing) to serverless APIs and offloading image storage to Cloudinary, server overhead remains extremely low. Database read/write scales efficiently on MongoDB.
 
 ---
 
-## Tech stack
+## 🌟 Unique Selling Proposition (USP)
 
-| Layer | Technology |
-|---|---|
-| Frontend framework | React 18 + Vite 6 |
-| Styling | Tailwind CSS v4 |
-| Routing | React Router v7 |
-| Toasts | Sonner |
-| Icons | Lucide React |
-| Image upload | Cloudinary (unsigned preset) |
-| Auth | Firebase Auth (Google) |
-| Database | Cloud Firestore |
-| Backend | Firebase Cloud Functions v2 (Node 20) |
-| AI | Google Gemini 1.5 Flash (Vision) |
-| Image fetching | Axios (in Cloud Function) |
-
----
-
-## Hackathon demo flow
-
-1. Open app → Landing page
-2. Tap "Analyze My Look"
-3. Upload selfie (drag & drop or file picker) → uploads to Cloudinary live
-4. Upload inspiration photo → same
-5. Select city + budget → "Analyze My Look"
-6. Watch 7-step analysis animation while Gemini runs
-7. Reality Report → honest Gemini analysis, hair health score
-8. Cost Breakdown → 12-month TCO reveal
-9. Glow Roadmap → month-by-month plan
-10. Stylist Brief → screenshot-worthy card, download / share
-11. Salon Matching → 3 matched specialists
-12. Book → date picker → Booking Confirmation
-
-**For demo without API keys:** Leave `VITE_FUNCTIONS_BASE_URL` unset.
-Mock data runs automatically — full UI flow works offline.
+Unlike generic beauty apps, GlowTwin acts as an **independent hair advocate**. It tells the client the hard truth: whether their dream hair is chemically safe to achieve, how much it will *actually* cost them over the next year, and which local specialist has the validated skills to do it safely. It's the ultimate "know before you glow" tool.
