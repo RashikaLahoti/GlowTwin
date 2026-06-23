@@ -4,10 +4,8 @@
 
 ## 🔗 Live Demo
 
-**Frontend:** https://your-vercel-url.vercel.app
-
-**Backend:** https://your-render-url.onrender.com
-
+**Frontend:** https://glow-twin.vercel.app/
+**Backend:** https://glowtwin.onrender.com
 **GitHub:** https://github.com/RashikaLahoti/GlowTwin
 
 ---
@@ -158,27 +156,35 @@ Users can:
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ Architecture Overview
 
-```text
-User
- │
- ▼
-React + TypeScript Frontend
- │
- ▼
-Cloudinary Image Upload
- │
- ▼
-Express Backend API
- │
- ├── MongoDB
- │
- └── OpenRouter AI
-        │
-        ▼
-   Gemini 2.5 Flash
+GlowTwin is built on a decoupled, secure client-server architecture:
+
 ```
+                      ┌────────────────────────┐
+                      │    Client Browser      │
+                      │  (React + Tailwind v4) │
+                      └───────────┬────────────┘
+                                  │
+          1. Direct Upload        │ 2. POST /analyze
+          (Unsigned Preset)       │    with image URLs
+                                  ▼
+ ┌───────────────┐      ┌──────────────────┐      ┌───────────────┐
+ │  Cloudinary   │      │ Express Backend  │      │    MongoDB    │
+ │ Image Hosting │      │     (Node.js)    │      │   Database    │
+ └──────┬────────┘      └─────────┬────────┘      └───────┬───────┘
+        ▲                         │                       ▲
+        │ 4. Downloads Base64     │ 3. Create Pending Doc │ 7. Updates Doc
+        │    & sends to Gemini    │ 6. Zod Validate & Save│    to Complete
+        │                         ▼                       │
+        │             ┌──────────────────────┐            │
+        └─────────────┤    OpenRouter API    ├────────────┘
+                      │ (Gemini 2.5 Flash)   │
+                      └──────────────────────┘
+```
+
+### Decoupled Media Handling
+To bypass database payload bottlenecks and optimize transfer speeds, the frontend uploads images directly to Cloudinary using an unsigned upload preset (configured with a 10MB limit and a 24-hour auto-delete lifecycle). Only the secure HTTPS URLs and public IDs are transmitted to the backend.
 
 ### Workflow
 
@@ -192,18 +198,18 @@ Express Backend API
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Technology Stack
 
-| Layer          | Technologies                  |
-| -------------- | ----------------------------- |
-| Frontend       | React, TypeScript, Vite       |
-| Styling        | Tailwind CSS                  |
-| Backend        | Node.js, Express              |
-| Database       | MongoDB, Mongoose             |
-| AI             | OpenRouter + Gemini 2.5 Flash |
-| Media Storage  | Cloudinary                    |
-| Authentication | JWT                           |
-| Validation     | Zod                           |
+| Layer | Technologies | Key Features |
+|---|---|---|
+| **Frontend Framework** | React 18 · Vite 6 · TypeScript 5.4 | Single Page App, lightning-fast rendering, route lazy loading. |
+| **Styling & Icons** | Tailwind CSS v4 · Lucide React | Curated, dark-mode/glassmorphism aesthetics, responsive layouts. |
+| **Routing & Toasts** | React Router v7 · Sonner | Smooth, client-side page transitions and feedback. |
+| **Database** | MongoDB · Mongoose | Flexible document modeling for users, analyses, and bookings. |
+| **Backend API** | Node.js (v20+) · Express | Structured MVC pattern, security middleware, JWT authentication. |
+| **AI Vision Processor** | OpenRouter API · Gemini 2.5 Flash | Multimodal visual processing, schema-enforced analysis. |
+| **Media Pipeline** | Cloudinary Unsigned Upload API | Fast image uploads, automatic thumbnail transformations, auto-cleanup. |
+| **Validation & Safety** | Zod · Rate Limit Middleware · BCryptJS | strict schema enforcement, endpoint rate limits, password hashing. |
 
 ---
 
