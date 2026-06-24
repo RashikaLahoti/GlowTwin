@@ -1,14 +1,12 @@
-# 🌟 GlowTwin AI — Know Before You Glow
+# 🌟 GlowTwin — Know Before You Glow
 
-> An AI-powered beauty decision platform that helps users understand whether their dream hairstyle is realistically achievable, what it will cost, and which salon is best suited to achieve it.
+>> A city-based beauty marketplace that uses AI-powered hair analysis to help users discover the right salon, estimate transformation costs, evaluate feasibility, and book beauty services with confidence.
 
-## 🔗 Live Demo
+### 🔗 Live Links
 
-**Frontend:** https://glow-twin.vercel.app/
-**Backend:** https://glowtwin.onrender.com
-**GitHub:** https://github.com/RashikaLahoti/GlowTwin
-
----
+- Frontend: https://glow-twin.vercel.app/
+- Backend API: https://glowtwin.onrender.com
+- Source Code: https://github.com/RashikaLahoti/GlowTwin
 
 ## 📌 The Problem
 
@@ -19,6 +17,8 @@ Millions of people choose hairstyles and hair colors from Instagram, Pinterest, 
 * The true maintenance cost over time
 * Which salon specializes in the required technique
 * How to communicate technical requirements to a stylist
+* Finding salons with the right expertise in a specific city is difficult
+* Most beauty marketplace platforms provide generic listings instead of personalized recommendations
 
 As a result, users often face disappointing results, unnecessary expenses, and avoidable hair damage.
 
@@ -26,7 +26,7 @@ As a result, users often face disappointing results, unnecessary expenses, and a
 
 ## 💡 The Solution
 
-GlowTwin AI acts as a personal beauty advisor.
+GlowTwin AI combines an intelligent beauty advisor with a city-based salon marketplace.
 
 Users upload:
 
@@ -106,11 +106,13 @@ Supports salon recommendations based on:
 * Hair goals
 * Technique requirements
 
-Current supported cities:
+GlowTwin currently provides city-specific salon recommendations for:
 
-* Bhopal
-* Mumbai
-* Bangalore
+- Mumbai
+- Bangalore
+- Bhopal
+
+Each city contains dedicated salon listings and recommendation logic based on the user's selected transformation goals.
 
 Each recommendation includes reasons such as:
 
