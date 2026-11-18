@@ -169,7 +169,7 @@ async function runGeminiAnalysisAttempt(selfieUrl, inspirationUrl, city, budget,
   const response = await axios.post(
     'https://openrouter.ai/api/v1/chat/completions',
     {
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-3.6-flash',
       messages: [
         {
           role: 'user',
@@ -201,6 +201,9 @@ async function runGeminiAnalysisAttempt(selfieUrl, inspirationUrl, city, budget,
         Authorization: `Bearer ${apiToken}`,
         'Content-Type': 'application/json',
       },
+      timeout: 60000,           // 60s hard cap — fail fast instead of hanging forever
+      maxBodyLength: Infinity,  // two base64 images exceed axios' default body limit
+      maxContentLength: Infinity,
     }
   );
 
