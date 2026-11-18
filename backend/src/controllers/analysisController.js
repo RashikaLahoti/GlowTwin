@@ -35,10 +35,10 @@ export const analyze = async (req, res, next) => {
       });
     }
 
-    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-    if (!openRouterApiKey) {
+    const geminiApiKey = process.env.GEMINI_API_KEY; 
+    if (!geminiApiKey) {
       return res.status(500).json({
-        error: 'OPENROUTER_API_KEY is not configured on the server.',
+        error: 'GEMINI_API_KEY is not configured on the server.',
         code: 'MISSING_API_KEY',
       });
     }
@@ -67,7 +67,7 @@ export const analyze = async (req, res, next) => {
         inspirationUrl,
         city,
         budget,
-        openRouterApiKey
+        geminiApiKey
       );
 
       // Save complete status

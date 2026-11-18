@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { validateGeminiResponse } from '../validations/schemas.js';
 
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+
 /**
  * Fetch an image from a URL and return it as a base64 string + MIME type.
  * Retries up to 3 times on network errors.
@@ -148,7 +150,7 @@ function attemptJSONRepair(text) {
 }
 
 /**
- * Run Gemini Vision analysis attempt via OpenRouter.
+ * Run Gemini Vision analysis attempt via Google AI Studio (native Gemini API).
  */
 async function runGeminiAnalysisAttempt(selfieUrl, inspirationUrl, city, budget, apiKey) {
   // 1. Fetch both images in parallel
@@ -157,71 +159,67 @@ async function runGeminiAnalysisAttempt(selfieUrl, inspirationUrl, city, budget,
     fetchImageAsBase64(inspirationUrl),
   ]);
 
-  const apiToken = apiKey || process.env.OPENROUTER_API_KEY;
-
+  const apiToken = apiKey || process.env.GEMINI_API_KEY;
   if (!apiToken) {
-    throw new Error('OpenRouter API key is not configured.');
+    throw new Error('Gemini API key is not configured.');
   }
 
   const promptText = buildPrompt(city, budget);
 
-  // 2. Setup OpenRouter API request
+  // 2. Call Google's native Gemini endpoint
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
   const response = await axios.post(
-    'https://openrouter.ai/api/v1/chat/completions',
+    url,
     {
-      model: 'google/gemini-3.6-flash',
-      messages: [
+      contents: [
         {
           role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: promptText,
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:${selfieImg.mimeType};base64,${selfieImg.base64}`,
-              },
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:${inspoImg.mimeType};base64,${inspoImg.base64}`,
-              },
-            },
+          parts: [
+            { text: promptText },
+            { inline_data: { mime_type: selfieImg.mimeType, data: selfieImg.base64 } },
+            { inline_data: { mime_type: inspoImg.mimeType, data: inspoImg.base64 } },
           ],
         },
       ],
-      temperature: 0.3,
-      max_tokens: 2048,
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 2048,
+        responseMimeType: 'application/json', // forces clean JSON — no markdown fences
+      },
     },
     {
       headers: {
-        Authorization: `Bearer ${apiToken}`,
+        'x-goog-api-key': apiToken,
         'Content-Type': 'application/json',
       },
-      timeout: 60000,           // 60s hard cap — fail fast instead of hanging forever
-      maxBodyLength: Infinity,  // two base64 images exceed axios' default body limit
+      timeout: 60000,
+      maxBodyLength: Infinity,
       maxContentLength: Infinity,
     }
   );
 
-  if (!response.data?.choices?.[0]?.message?.content) {
-    throw new Error('OpenRouter returned an empty completion response.');
+  // 3. Extract text, guarding against safety blocks / empty candidates
+  const candidate = response.data?.candidates?.[0];
+  const rawText = candidate?.content?.parts?.[0]?.text;
+
+  if (!rawText) {
+    const reason =
+      response.data?.promptFeedback?.blockReason ||
+      candidate?.finishReason ||
+      'unknown';
+    throw new Error(`Gemini returned no usable content (reason: ${reason}).`);
   }
 
-  const rawText = response.data.choices[0].message.content.trim();
-
-  // 3. Parse JSON
+  // 4. Parse JSON
   let parsed;
   try {
-    parsed = attemptJSONRepair(rawText);
+    parsed = attemptJSONRepair(rawText.trim());
   } catch (err) {
     throw new Error(`Failed to parse Gemini response as JSON: ${err.message}`);
   }
 
-  // 4. Validate structure
+  // 5. Validate structure
   const validation = validateGeminiResponse(parsed);
   if (!validation.valid) {
     throw new Error(validation.error);
