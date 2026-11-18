@@ -31,3 +31,6 @@ node_modules
 backend/node_modules
 .env
 .env.example
+
+# Internal / local-only docs — not for the public repo
+local-docs/
