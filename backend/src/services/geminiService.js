@@ -1,7 +1,12 @@
 import axios from 'axios';
 import { validateGeminiResponse } from '../validations/schemas.js';
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+const GEMINI_MODELS = (process.env.GEMINI_MODELS || process.env.GEMINI_MODEL || 'gemini-3.5-flash')
+  .split(',')
+  .map((m) => m.trim())
+  .filter(Boolean);
+
+const MAX_RETRIES = 2;
 
 /**
  * Fetch an image from a URL and return it as a base64 string + MIME type.
@@ -150,9 +155,10 @@ function attemptJSONRepair(text) {
 }
 
 /**
- * Run Gemini Vision analysis attempt via Google AI Studio (native Gemini API).
+ * Run a single Gemini Vision analysis attempt against ONE model
+ * via Google AI Studio (native Gemini API).
  */
-async function runGeminiAnalysisAttempt(selfieUrl, inspirationUrl, city, budget, apiKey) {
+async function runGeminiAnalysisAttempt(selfieUrl, inspirationUrl, city, budget, apiKey, model) {
   // 1. Fetch both images in parallel
   const [selfieImg, inspoImg] = await Promise.all([
     fetchImageAsBase64(selfieUrl),
@@ -166,8 +172,8 @@ async function runGeminiAnalysisAttempt(selfieUrl, inspirationUrl, city, budget,
 
   const promptText = buildPrompt(city, budget);
 
-  // 2. Call Google's native Gemini endpoint
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  // 2. Call Google's native Gemini endpoint for this specific model
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
   const response = await axios.post(
     url,
@@ -228,29 +234,46 @@ async function runGeminiAnalysisAttempt(selfieUrl, inspirationUrl, city, budget,
   return validation.data;
 }
 
-const MAX_RETRIES = 2;
-
 /**
- * Main export: runs Gemini Vision analysis with retries and exponential backoff.
+ * Main export: runs Gemini analysis across a prioritized list of models.
+ * - Transient errors (503 overload, 429 rate limit, network/timeout) → retry same model, then fall through.
+ * - Model gone (404 retired/invalid) → skip straight to the next model.
+ * - Config/payload errors (400/403) → fail fast (same result for every model).
  */
 export async function runGeminiAnalysis(selfieUrl, inspirationUrl, city, budget, apiKey) {
   let lastError = null;
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      return await runGeminiAnalysisAttempt(selfieUrl, inspirationUrl, city, budget, apiKey);
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      console.warn(
-        `[GlowTwin Server] Gemini analysis attempt ${attempt + 1}/${MAX_RETRIES + 1} failed: ${lastError.message}`
-      );
+  for (const model of GEMINI_MODELS) {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return await runGeminiAnalysisAttempt(selfieUrl, inspirationUrl, city, budget, apiKey, model);
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        const status = err?.response?.status;
 
-      if (attempt < MAX_RETRIES) {
-        const delay = Math.pow(2, attempt) * 2000; // 2s, 4s
-        await new Promise((r) => setTimeout(r, delay));
+        console.warn(
+          `[GlowTwin Server] Model "${model}" attempt ${attempt + 1}/${MAX_RETRIES + 1} failed (status ${status ?? 'n/a'}): ${lastError.message}`
+        );
+
+        const isTransient = status === 503 || status === 429 || status === undefined;
+        const isModelGone = status === 404;
+
+        if (isTransient && attempt < MAX_RETRIES) {
+          const delay = Math.pow(2, attempt) * 3000; // 3s, 6s, 12s
+          await new Promise((r) => setTimeout(r, delay));
+          continue; // retry SAME model
+        }
+
+        if (isTransient || isModelGone) {
+          console.warn(`[GlowTwin Server] Falling back from "${model}" to next model...`);
+          break; // move to the next model in the list
+        }
+
+        // 400 / 403 etc. — same failure for every model, no point trying others
+        throw lastError;
       }
     }
   }
 
-  throw new Error(`Gemini analysis failed after ${MAX_RETRIES + 1} attempts: ${lastError?.message}`);
+  throw new Error(`Gemini analysis failed on all models [${GEMINI_MODELS.join(', ')}]: ${lastError?.message}`);
 }
